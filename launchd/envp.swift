@@ -12,8 +12,12 @@ typealias EnvPointer = UnsafePointer<UnsafeMutablePointer<CChar>?>
 struct TextLog: TextOutputStream {
 
     static var shared = TextLog()
-    
+
+#if DEBUG || ENABLE_LOGGING
+    var enableLogging = true
+#else
     var enableLogging = false
+#endif
     
     func write(_ string: String) {
         guard enableLogging else { return print(string) }
