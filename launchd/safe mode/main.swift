@@ -16,10 +16,10 @@ func proc_listpids(
 ) -> Int
 
 func findPID(_ name: String) -> pid_t? {
-    let numberOfProcesses = proc_listpids(-1, 0, nil, 0)
+    let numberOfProcesses = proc_listpids(1, 0, nil, 0)
     var pids = [pid_t](repeating: 0, count: numberOfProcesses)
     _ = pids.withUnsafeMutableBufferPointer { buf in
-        proc_listpids(-1, 0, buf.baseAddress, MemoryLayout<pid_t>.size * buf.count)
+        proc_listpids(1, 0, buf.baseAddress, MemoryLayout<pid_t>.size * buf.count)
     }
     for i in 0..<numberOfProcesses {
         let pathBuffer = UnsafeMutablePointer<UInt8>.allocate(capacity: Int(MAXPATHLEN))
