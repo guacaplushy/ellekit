@@ -120,5 +120,6 @@ jobs:
       - name: Upload packages
         uses: actions/upload-artifact@v3
         with:
+          name: ${{ matrix.name }} package
           path: ${{ github.workspace }}/packages/*.deb
     
