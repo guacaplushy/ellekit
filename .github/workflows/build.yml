@@ -122,4 +122,20 @@ jobs:
         with:
           name: ${{ matrix.name }} package
           path: ${{ github.workspace }}/packages/*.deb
-    
+      
+      - name: Clone repo
+        uses: actions/checkout@v3
+        with:
+          repository: ${{ secrets.REPO }}
+          token: ${{ secrets.REPO_ACCESS_TOKEN }}
+          path: repo
+      - name: Push packages
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          mkdir pool
+          cp ../packages/*.deb pool/
+          git add pool
+          git commit -m "Update packages"
+          git push
+        working-directory: repo

@@ -1,7 +1,9 @@
 #!/bin/bash
-set -e
 
-ELLEKIT_VERSION="0.1"
+# Build script to build and package development/nightly builds of ElleKit.
+# Should not be used in production!
+
+set -e
 
 abort() {
     echo "ERROR: $1!"
@@ -78,10 +80,15 @@ else
 fi
 
 COMMON_OPTIONS=(-sdk "${SDK}" -configuration "${CONFIGURATION}" CODE_SIGN_IDENTITY='' CODE_SIGNING_ALLOWED=NO BUILD_LIBRARIES_FOR_DISTRIBUTION=YES)
-GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-GIT_COMMIT_HASH="$(git describe --always --dirty | sed 's/-/./g')"
+GIT_BRANCH="+$(git rev-parse --abbrev-ref HEAD)"
+if [ "${GIT_BRANCH}" = "+main" ]; then
+    GIT_BRANCH=""
+fi
 
-DEB_VERSION="${ELLEKIT_VERSION}+${GIT_BRANCH}.${GIT_COMMIT_HASH}.${CONFIGURATION}"
+# We can have multiple commits in a day, so use the number of additional commits instead of the date
+GIT_COMMIT_HASH="$(git describe --tags --always --dirty | sed 's/-/./g' | sed 's/^v//g')"
+
+DEB_VERSION="${GIT_COMMIT_HASH}${GIT_BRANCH}"
 
 if [ -n "${ROOTLESS}" ]; then
     # This should be evident from iphoneos-arm64
@@ -89,10 +96,21 @@ if [ -n "${ROOTLESS}" ]; then
     true
 fi
 
+# Do not add configuration for release builds
+if [ "${CONFIGURATION}" = "Debug" ]; then
+    DEB_VERSION+="+debug"
+    CONTROL_PATH="control-debug"
+fi
+
 if [ -n "${ENABLE_LOGGING}" ] && [ "${CONFIGURATION}" != "Debug" ]; then
     # Logging is already enabled on debug
     COMMON_OPTIONS+=('SWIFT_ACTIVE_COMPILATION_CONDITIONS=$SWIFT_ACTIVE_COMPILATION_CONDITIONS ENABLE_LOGGING')
     DEB_VERSION+="+logging"
+    CONTROL_PATH="control-logging"
+fi
+
+if [ -z "${CONTROL_PATH}" ]; then
+    CONTROL_PATH="control"
 fi
 
 CHMOD="$(command -v gchmod || command -v chmod)" || abort "Missing chmod"
@@ -150,8 +168,8 @@ xcodebuild -target loader "${COMMON_OPTIONS[@]}"
 
 SIZE=$(du -sk work/dist | cut -f 1)
 "${MKDIR}" -p work/dist/DEBIAN
-"${SED}" -e "s|@DEB_VERSION@|${DEB_VERSION}|g" -e "s|@DEB_ARCH@|${DEB_ARCH}|g" packaging/control >work/dist/DEBIAN/control
-echo "Installed-Size: $SIZE" >>work/dist/DEBIAN/control
+"${SED}" -e "s|@DEB_VERSION@|${DEB_VERSION}|g" -e "s|@DEB_ARCH@|${DEB_ARCH}|g" "packaging/${CONTROL_PATH}" > work/dist/DEBIAN/control
+echo "Installed-Size: $SIZE" >> work/dist/DEBIAN/control
 
 # Not compatible with BSD sed!
 "${SED}" -i'' '$a\' work/dist/DEBIAN/control
