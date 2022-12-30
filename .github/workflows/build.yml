@@ -97,10 +97,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Test
-        run: git describe --tags --always --dirty | sed 's/-/./g' | sed 's/^v//g'
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Get tags
+        run: git fetch --prune --unshallow --tags
 
       - name: Select Xcode version (14.1)
         run: |
