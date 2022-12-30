@@ -97,7 +97,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        
+      - name: Get tags
+        run: git fetch --tags origin
+
       - name: Select Xcode version (14.1)
         run: |
           sudo xcode-select --switch /Applications/Xcode_14.1.app
