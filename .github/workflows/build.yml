@@ -133,7 +133,7 @@ jobs:
         run: |
           git config user.email "actions@github.com"
           git config user.name "GitHub Actions"
-          mkdir pool
+          mkdir pool || true
           cp ../packages/*.deb pool/
           git add pool
           git commit -m "Update packages"
